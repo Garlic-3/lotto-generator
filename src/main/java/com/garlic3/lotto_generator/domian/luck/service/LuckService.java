@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -73,4 +75,16 @@ public class LuckService {
 
         luckRepository.save(luck);
     }
+
+    private long getTotalLuckCount() {
+        return luckRepository.count();
+    }
+
+    private long calculateIndex(String name, LocalDate birthdate, long totalItems) {
+        String key = name + birthdate.toString();
+        int hash = key.hashCode();  // 이름과 생년월일로 해시 생성
+        return Math.abs(hash % totalItems);  // 총 운세 개수에 맞춰 인덱스 선택
+    }
+
+
 }

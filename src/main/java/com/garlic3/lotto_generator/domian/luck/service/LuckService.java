@@ -3,9 +3,12 @@ package com.garlic3.lotto_generator.domian.luck.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.garlic3.lotto_generator.domian.luck.dto.TodayLuckRequest;
+import com.garlic3.lotto_generator.domian.luck.dto.TodayLuckResponse;
 import com.garlic3.lotto_generator.domian.luck.entity.Luck;
 import com.garlic3.lotto_generator.domian.luck.repository.LuckRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -14,8 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.util.NoSuchElementException;
+import java.util.Random;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class LuckService {
@@ -58,8 +64,8 @@ public class LuckService {
             String totalLuck = totalLuckElement.text();
             String moneyLuck = moneyLuckElement.text();
 
-//            System.out.println("totalLuck = " + totalLuck);
-//            System.out.println("moneyLuck = " + moneyLuck);
+            log.debug("totalLuck = {}", totalLuck);
+            log.debug("moneyLuck = {}", moneyLuck);
 
             // 총운과 금전운만 저장
             saveLuck(totalLuck, moneyLuck);
@@ -76,14 +82,28 @@ public class LuckService {
         luckRepository.save(luck);
     }
 
+    public TodayLuckResponse getTodayLuck(TodayLuckRequest todayLuckRequest) {
+        long totalLuckCount = getTotalLuckCount();
+        long luckIndex = calculateIndex(todayLuckRequest, totalLuckCount);
+        Luck luck = luckRepository.findById(luckIndex)
+                .orElseThrow(() -> new NoSuchElementException("운세를 찾을 수 없습니다."));
+
+        return new TodayLuckResponse(luck.getTotalLuck(), luck.getMoneyLuck());
+    }
+
     private long getTotalLuckCount() {
         return luckRepository.count();
     }
 
-    private long calculateIndex(String name, LocalDate birthdate, long totalItems) {
-        String key = name + birthdate.toString();
-        int hash = key.hashCode();  // 이름과 생년월일로 해시 생성
-        return Math.abs(hash % totalItems);  // 총 운세 개수에 맞춰 인덱스 선택
+    private long calculateIndex(TodayLuckRequest todayLuckRequest, long totalItems) {
+        String key = todayLuckRequest.getName() + todayLuckRequest.getBirthDate() + LocalDate.now();
+        // 이름과 생년월일로 해시 생성
+        int hash = key.hashCode();
+        Random random = new Random(hash);
+        // 랜덤 long 생성
+        long randomLong = random.nextLong();
+        // 총 운세 개수에 맞춰 인덱스 선택
+        return Math.abs(randomLong % totalItems);
     }
 
 

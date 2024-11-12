@@ -1,6 +1,8 @@
 package com.garlic3.lotto_generator.domian.luck.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.garlic3.lotto_generator.domian.luck.dto.TodayLuckRequest;
+import com.garlic3.lotto_generator.domian.luck.dto.TodayLuckResponse;
 import com.garlic3.lotto_generator.domian.luck.dto.YearRequest;
 import com.garlic3.lotto_generator.domian.luck.service.LuckService;
 import lombok.RequiredArgsConstructor;
@@ -24,16 +26,20 @@ public class LuckController {
     public ResponseEntity<String> saveLuck(@RequestBody YearRequest yearRequest) throws JsonProcessingException {
         int year = yearRequest.getYear();
 
-        // Loop through each day of the year
+        log.debug("save luck start for year : {}", yearRequest.getYear());
+
+        // 1년 모든 날짜동안 반복
         for (int month = 1; month <= 12; month++) {
             for (int day = 1; day <= YearMonth.of(year, month).lengthOfMonth(); day++) {
-                // Format the date as "YYYYMMDD"
+                // 날짜 형식 "YYYYMMDD" 로 변경
                 String date = String.format("%04d%02d%02d", year, month, day);
-
-                // Call saveHoroscopeDate with the formatted date
+                // api 호출하여 운세 저장
                 luckService.saveLuckData(date);
             }
         }
+
+        log.debug("save luck end for year : {}", yearRequest.getYear());
+
         return ResponseEntity.ok("OK");
     }
 
